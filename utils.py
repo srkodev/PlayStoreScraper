@@ -1,9 +1,7 @@
-import streamlit as st
 from google_play_scraper import reviews_all
 import pandas as pd
 from fpdf import FPDF
-import base64
-import io
+import os
 
 def get_reviews(app_id):
     try:
@@ -12,51 +10,81 @@ def get_reviews(app_id):
     except Exception as e:
         return None, str(e)
 
-class UTF8PDF(FPDF):
-    def __init__(self):
-        super().__init__()
-        # Add DejaVu Sans font for UTF-8 support
-        self.add_font('DejaVu', '', 'DejaVuSansCondensed.ttf', uni=True)
-        self.add_font('DejaVu', 'B', 'DejaVuSansCondensed-Bold.ttf', uni=True)
-
 def create_pdf(reviews_data):
+    """Crée un PDF formaté avec les avis"""
     pdf = FPDF()
     pdf.add_page()
-
-    # Configure fonts
-    pdf.add_font('Arial', '', 'Helvetica', uni=True)
-    pdf.add_font('Arial', 'B', 'Helvetica-Bold', uni=True)
-
-    # Add header
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt="Avis Google Play Store", ln=True, align='C')
+    
+    # Configuration de la police et des marges
+    pdf.set_font("helvetica", size=16)
+    pdf.set_auto_page_break(auto=True, margin=15)
+    
+    # Titre
+    pdf.set_font("helvetica", 'B', 20)
+    pdf.cell(0, 20, "Avis Google Play Store", ln=True, align='C')
     pdf.ln(10)
-
-    # Add reviews
-    pdf.set_font("Arial", size=12)
+    
+    # Statistiques
+    df = pd.DataFrame(reviews_data)
+    pdf.set_font("helvetica", 'B', 14)
+    pdf.cell(0, 10, "Statistiques", ln=True)
+    pdf.set_font("helvetica", size=12)
+    pdf.cell(0, 8, f"Note moyenne: {df['score'].mean():.1f}/5", ln=True)
+    pdf.cell(0, 8, f"Nombre total d'avis: {len(df)}", ln=True)
+    pdf.cell(0, 8, f"Avis 5 étoiles: {len(df[df['score'] == 5])}", ln=True)
+    pdf.ln(10)
+    
+    # Avis
+    pdf.set_font("helvetica", 'B', 14)
+    pdf.cell(0, 10, "Détail des avis", ln=True)
+    pdf.ln(5)
+    
     for review in reviews_data:
         if review["content"]:
-            # Use * instead of ★ for rating
-            rating_text = f"Note: {review['score']}/5"
-            pdf.cell(0, 10, txt=rating_text, ln=True)
-            pdf.multi_cell(0, 10, txt=review['content'], align='L')
+            # Note
+            pdf.set_font("helvetica", 'B', 12)
+            pdf.cell(0, 8, f"Note: {review['score']}/5", ln=True)
+            
+            # Contenu
+            pdf.set_font("helvetica", size=10)
+            try:
+                pdf.multi_cell(0, 6, review['content'])
+            except Exception:
+                cleaned_content = review['content'].encode('ascii', 'ignore').decode()
+                pdf.multi_cell(0, 6, cleaned_content)
             pdf.ln(5)
-
-    # Return PDF as bytes
-    try:
-        return pdf.output(dest='S').encode('latin1')
-    except UnicodeEncodeError:
-        # If encoding fails, try to remove problematic characters
-        return pdf.output(dest='S').encode('latin1', errors='replace')
-
-def create_download_link(data, filename, text):
-    b64 = base64.b64encode(data).decode()
-    href = f'<a href="data:application/octet-stream;base64,{b64}" download="{filename}">{text}</a>'
-    return href
+            
+            # Ligne de séparation
+            pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+            pdf.ln(8)
+    
+    return pdf.output()
 
 def save_txt(reviews_data, app_id):
-    output = io.StringIO()
+    """Crée un fichier texte formaté avec les avis"""
+    df = pd.DataFrame(reviews_data)
+    
+    content = [
+        f"Avis pour l'application {app_id}",
+        "=" * 50,
+        "",
+        "STATISTIQUES",
+        "-" * 12,
+        f"Note moyenne: {df['score'].mean():.1f}/5",
+        f"Nombre total d'avis: {len(df)}",
+        f"Avis 5 étoiles: {len(df[df['score'] == 5])}",
+        "",
+        "DÉTAIL DES AVIS",
+        "-" * 14,
+        ""
+    ]
+    
     for review in reviews_data:
-        if review["content"]:
-            output.write(f"Note: {review['score']}/5\n{review['content']}\n\n")
-    return output.getvalue()
+        content.extend([
+            f"Note: {review['score']}/5",
+            f"Avis: {review['content']}",
+            "-" * 50,
+            ""
+        ])
+    
+    return "\n".join(content)

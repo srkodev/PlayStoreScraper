@@ -1,12 +1,14 @@
 [project]
-name = "repl-nix-workspace"
+name = "play-store-scraper"
 version = "0.1.0"
-description = "Add your description here"
-requires-python = ">=3.11"
+description = "Application pour extraire les avis du Google Play Store"
+requires-python = ">=3.8"
 dependencies = [
-    "fpdf>=1.7.2",
+    "customtkinter>=5.2.0",
+    "fpdf2>=2.7.6",
     "google-play-scraper>=1.2.7",
     "pandas>=2.2.3",
-    "pyinstaller>=6.12.0",
-    "streamlit>=1.42.2",
+    "pillow>=10.0.0",
+    "openpyxl>=3.1.2",
+    "pyinstaller>=6.3.0",
 ]
