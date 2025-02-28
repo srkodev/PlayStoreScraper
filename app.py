@@ -14,15 +14,13 @@ class ModernPlayStoreApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        # Configuration de base
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
         
-        self.title("PlayStore Reviews Analyzer")
+        self.title("Avis PlayStore")
         self.geometry("1200x800")
-        self.minsize(900, 600)
+        self.minsize(600, 400)
         
-        # Couleurs et styles
         self.colors = {
             'primary': '#1f538d',
             'secondary': '#14A44D',
@@ -35,59 +33,79 @@ class ModernPlayStoreApp(ctk.CTk):
             'text': '#FFFFFF'
         }
         
-        # Configuration du grid principal
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
+        
+        self.main_frame = ctk.CTkFrame(self, fg_color=self.colors['background'])
+        self.main_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        self.main_frame.grid_columnconfigure(0, weight=1)
+        self.main_frame.grid_rowconfigure(1, weight=1)
         
         self.create_main_content()
         self.create_footer()
         
-        # Variables pour les animations
+        self.bind("<Configure>", self.on_resize)
+        
         self.loading = False
         self.progress_value = 0
+        self.current_width = self.winfo_width()
         
+    def on_resize(self, event):
+        if event.widget == self:
+            new_width = event.width
+            if abs(new_width - self.current_width) > 50:
+                self.current_width = new_width
+                self.adjust_layout()
+    
+    def adjust_layout(self):
+        width = self.winfo_width()
+        
+        if hasattr(self, 'export_frame'):
+            for button in self.export_frame.winfo_children():
+                if isinstance(button, ctk.CTkButton):
+                    if width < 800:
+                        button.configure(width=100, height=30, font=('Helvetica', 10))
+                    else:
+                        button.configure(width=120, height=35, font=('Helvetica', 12))
+        
+        if hasattr(self, 'reviews_text'):
+            if width < 800:
+                self.reviews_text.configure(font=('Helvetica', 11))
+            else:
+                self.reviews_text.configure(font=('Helvetica', 13))
+    
     def create_main_content(self):
-        # Container principal
-        self.main_container = ctk.CTkFrame(self, fg_color=self.colors['background'])
-        self.main_container.grid(row=0, column=0, sticky="nsew", padx=20, pady=10)
-        self.main_container.grid_columnconfigure(0, weight=1)
-        self.main_container.grid_rowconfigure(1, weight=1)
-        
-        # Section de recherche
         self.create_search_section()
-        
-        # Section des résultats (initialement cachée)
         self.create_results_section()
         
     def create_search_section(self):
         search_frame = ctk.CTkFrame(
-            self.main_container,
+            self.main_frame,
             fg_color=self.colors['surface'],
             corner_radius=15
         )
         search_frame.grid(row=0, column=0, sticky="ew", padx=20, pady=20)
+        search_frame.grid_columnconfigure(0, weight=1)
         
-        # URL Input avec icône
         url_container = ctk.CTkFrame(search_frame, fg_color="transparent")
-        url_container.pack(pady=20, padx=30, fill="x")
+        url_container.grid(row=0, column=0, sticky="ew", padx=20, pady=20)
+        url_container.grid_columnconfigure(0, weight=1)
         
         url_label = ctk.CTkLabel(
             url_container,
             text="URL de l'application",
             font=ctk.CTkFont(size=14, weight="bold")
         )
-        url_label.pack(anchor="w", pady=(0, 5))
+        url_label.grid(row=0, column=0, sticky="w", pady=(0, 5))
         
         self.url_entry = ctk.CTkEntry(
             url_container,
             placeholder_text="https://play.google.com/store/apps/details?id=com.example.app",
             height=45,
-            font=ctk.CTkFont(size=13),
-            border_color=self.colors['accent']
+            font=ctk.CTkFont(size=13)
         )
-        self.url_entry.pack(fill="x", pady=(0, 10))
+        self.url_entry.grid(row=1, column=0, sticky="ew", pady=(0, 10))
         
-        # Bouton de recherche avec animation de chargement
         self.search_button = ctk.CTkButton(
             url_container,
             text="Analyser les avis",
@@ -97,53 +115,51 @@ class ModernPlayStoreApp(ctk.CTk):
             fg_color=self.colors['accent'],
             hover_color=self.colors['primary']
         )
-        self.search_button.pack(pady=10)
+        self.search_button.grid(row=2, column=0, sticky="ew", pady=10)
         
-        # Barre de progression - Correction de l'erreur de transparence
         self.progress_bar = ctk.CTkProgressBar(
             url_container,
             mode="indeterminate",
             height=2,
-            fg_color=self.colors['surface'],  # Utilisation d'une couleur au lieu de "transparent"
+            fg_color=self.colors['surface'],
             progress_color=self.colors['accent']
         )
-        self.progress_bar.pack(fill="x", pady=(5, 0))
+        self.progress_bar.grid(row=3, column=0, sticky="ew", pady=(5, 0))
         self.progress_bar.set(0)
         
     def create_results_section(self):
         self.results_container = ctk.CTkFrame(
-            self.main_container,
+            self.main_frame,
             fg_color=self.colors['surface'],
             corner_radius=15
         )
         
-        # Stats Cards
         self.stats_frame = ctk.CTkFrame(
             self.results_container,
             fg_color="transparent"
         )
         self.stats_frame.pack(fill="x", padx=20, pady=20)
-        self.stats_frame.grid_columnconfigure((0,1,2), weight=1)
+        self.stats_frame.grid_columnconfigure((0,1,2), weight=1, uniform="stats")
         
-        # Reviews Section
         reviews_frame = ctk.CTkFrame(
             self.results_container,
             fg_color=self.colors['background'],
             corner_radius=10
         )
         reviews_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        reviews_frame.grid_columnconfigure(0, weight=1)
+        reviews_frame.grid_rowconfigure(1, weight=1)
         
-        # Titre des avis
         reviews_header = ctk.CTkFrame(reviews_frame, fg_color="transparent")
-        reviews_header.pack(fill="x", padx=15, pady=10)
+        reviews_header.grid(row=0, column=0, sticky="ew", padx=15, pady=10)
+        reviews_header.grid_columnconfigure(0, weight=1)
         
         ctk.CTkLabel(
             reviews_header,
             text="Derniers avis",
             font=ctk.CTkFont(size=16, weight="bold")
-        ).pack(side="left")
+        ).grid(row=0, column=0, sticky="w")
         
-        # Zone de texte des avis
         self.reviews_text = ctk.CTkTextbox(
             reviews_frame,
             font=ctk.CTkFont(size=13),
@@ -152,11 +168,11 @@ class ModernPlayStoreApp(ctk.CTk):
             border_color=self.colors['accent'],
             border_width=1
         )
-        self.reviews_text.pack(fill="both", expand=True, padx=15, pady=(0, 15))
+        self.reviews_text.grid(row=1, column=0, sticky="nsew", padx=15, pady=(0, 15))
         
-        # Boutons d'export
         self.export_frame = ctk.CTkFrame(reviews_frame, fg_color="transparent")
-        self.export_frame.pack(fill="x", padx=15, pady=(0, 15))
+        self.export_frame.grid(row=2, column=0, sticky="ew", padx=15, pady=(0, 15))
+        self.export_frame.grid_columnconfigure((0,1,2), weight=1, uniform="export")
         
     def create_stat_card(self, parent, title, value, icon="📊"):
         card = ctk.CTkFrame(parent, fg_color=self.colors['background'], corner_radius=10)
@@ -212,7 +228,6 @@ class ModernPlayStoreApp(ctk.CTk):
         self.search_button.configure(state="disabled", text="Analyse en cours...")
         self.progress_bar.start()
         
-        # Lancer l'analyse dans un thread séparé
         threading.Thread(target=self.fetch_reviews, args=(app_id,), daemon=True).start()
         
     def fetch_reviews(self, app_id):
@@ -235,20 +250,16 @@ class ModernPlayStoreApp(ctk.CTk):
         self.progress_bar.set(0)
         
     def display_results(self, reviews_data, app_id):
-        # Afficher le conteneur de résultats
         self.results_container.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
         
-        # Nettoyer les anciennes stats
         for widget in self.stats_frame.winfo_children():
             widget.destroy()
             
-        # Calculer les statistiques
         df = pd.DataFrame(reviews_data)
         mean_score = df['score'].mean()
         total_reviews = len(df)
         five_stars = len(df[df['score'] == 5])
         
-        # Créer les cartes de stats
         stats = [
             ("Note moyenne", f"{mean_score:.1f}/5", "⭐"),
             ("Total des avis", str(total_reviews), "📝"),
@@ -259,7 +270,6 @@ class ModernPlayStoreApp(ctk.CTk):
             card = self.create_stat_card(self.stats_frame, title, value, icon)
             card.grid(row=0, column=i, sticky="ew", padx=10)
             
-        # Afficher les avis
         self.reviews_text.delete("0.0", "end")
         for review in reviews_data[:10]:
             stars = "⭐" * int(review['score'])
@@ -267,7 +277,6 @@ class ModernPlayStoreApp(ctk.CTk):
             self.reviews_text.insert("end", f"{review['content']}\n")
             self.reviews_text.insert("end", "─" * 50 + "\n")
             
-        # Créer les boutons d'export
         for widget in self.export_frame.winfo_children():
             widget.destroy()
             
@@ -302,7 +311,7 @@ class ModernPlayStoreApp(ctk.CTk):
         
     def export_pdf(self, reviews_data, app_id):
         try:
-            initial_dir = os.path.expanduser("~/Documents")  # Dossier Documents par défaut
+            initial_dir = os.path.expanduser("~/Documents")
             filename = filedialog.asksaveasfilename(
                 defaultextension=".pdf",
                 filetypes=[("Fichiers PDF", "*.pdf")],

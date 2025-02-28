@@ -11,6 +11,9 @@ PyInstaller.__main__.run([
     '--noconsole',  # Ne pas afficher la console
     '--clean',  # Nettoyer avant la compilation
     # f'--icon={icon_path}',  # Ajouter une icône (optionnel)
+    '--disable-windowed-traceback',
+    '--uac-admin',  # Demander les droits admin explicitement
+    '--version-file=version_info.txt',
     '--add-data=utils.py;.',  # Inclure les fichiers nécessaires
     '--collect-all=customtkinter',  # Collecter tous les fichiers de customtkinter
     '--collect-all=google_play_scraper',  # Collecter tous les fichiers de google_play_scraper

@@ -1,4 +1,9 @@
-/build
-/dist
-/env
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+.env
+venv/
+env/
 

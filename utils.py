@@ -4,8 +4,15 @@ from fpdf import FPDF
 import os
 
 def get_reviews(app_id):
+    """Récupère les avis depuis Google Play Store de manière sécurisée"""
     try:
-        reviews = reviews_all(app_id, lang="fr", country="fr")
+        # Limiter le nombre de requêtes
+        reviews = reviews_all(
+            app_id, 
+            lang="fr", 
+            country="fr",
+            sleep_milliseconds=100  # Ajouter un délai entre les requêtes
+        )
         return reviews, None
     except Exception as e:
         return None, str(e)
